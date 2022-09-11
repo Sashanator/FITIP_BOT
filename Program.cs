@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+using Serilog;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
@@ -11,7 +12,7 @@ namespace TelegramBot;
 
 internal class Program
 {
-    public static ITelegramBotClient Bot = new TelegramBotClient("");
+    public static ITelegramBotClient Bot = new TelegramBotClient("5439105151:AAF5g0CyPannZPgwe2dtFF905wYXpAA_0QY");
     public static List<AppUser> Users { get; set; } = new();
     private static int _registrationCount = 0;
 
@@ -71,9 +72,14 @@ internal class Program
 
     public static void Main()
     {
-        /*
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File(Path.Combine(Environment.CurrentDirectory, @"Logs/", "logs.txt"), rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
         Console.WriteLine("Start bot " + Bot.GetMeAsync().Result.FirstName);
-        */
+        
 
         var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;
