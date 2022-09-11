@@ -4,6 +4,7 @@ using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Handlers;
+using TelegramBot.Helper;
 using AppUser = TelegramBot.Models.AppUser;
 
 namespace TelegramBot;
@@ -16,6 +17,19 @@ internal class Program
 
     public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
+        var validTelegramIds = TelegramIdHelper.GetIds();
+        
+        if (update.Message != null && update.Message.From != null && !validTelegramIds.Contains(update.Message.From.Id))
+        {
+            await botClient.SendTextMessageAsync(
+                update.Message.Chat,
+                "Прошу нас простить, вы не можете пользоваться системой",
+                cancellationToken: cancellationToken
+            );
+            
+            return;
+        }
+        
         Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
         var message = update.Message;
         switch (update.Type)
@@ -38,8 +52,6 @@ internal class Program
             case UpdateType.CallbackQuery:
                 await CallbackHandler.HandleCallback(botClient, update, cancellationToken);
                 break;
-            default:
-                throw new ArgumentOutOfRangeException();
         }
     }
 
@@ -59,7 +71,9 @@ internal class Program
 
     public static void Main()
     {
+        /*
         Console.WriteLine("Start bot " + Bot.GetMeAsync().Result.FirstName);
+        */
 
         var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;
