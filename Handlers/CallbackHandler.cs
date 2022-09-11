@@ -87,12 +87,14 @@ public class CallbackHandler
         
         user.TeamId ??= user.RegNumber / MEMBERS_PER_TEAM + 1;
         
-        await botClient.SendTextMessageAsync(
+        var message = await botClient.SendTextMessageAsync(
             callbackQuery.Message.Chat,
             $"Номер твой команды: {user.TeamId}",
             disableNotification: false,
             replyToMessageId: callbackQuery.Message.MessageId,
             cancellationToken: cancellationToken);
+
+        await botClient.PinChatMessageAsync(callbackQuery.From.Id, message.MessageId, cancellationToken: cancellationToken);
 
         Log(user);
     }
