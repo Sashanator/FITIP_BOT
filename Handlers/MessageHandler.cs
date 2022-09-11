@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using Serilog;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Constants;
@@ -32,5 +33,14 @@ public static class MessageHandler
             disableNotification: false,
             replyToMessageId: message.MessageId,
             cancellationToken: cancellationToken);
+
+        Log.Information(FormatLogFromMessage(message));
+    }
+
+    private static string FormatLogFromMessage(Message message)
+    {
+        if (message.From == null) return string.Empty;
+        var user = Program.Users.FirstOrDefault(u => u.UserInfo.Id == message.From.Id);
+        return user == null ? string.Empty : $"#{user.RegNumber} {user.UserInfo.FirstName} {user.UserInfo.LastName} ({user.UserInfo.Username} [{user.UserInfo.Id}]): {message.Text}";
     }
 }
