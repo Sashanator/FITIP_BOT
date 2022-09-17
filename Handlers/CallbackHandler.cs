@@ -1,7 +1,9 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Constants;
+using TelegramBot.Extensions;
 using TelegramBot.Models;
 using File = System.IO.File;
 
@@ -27,9 +29,99 @@ public class CallbackHandler
             case "faq":
                 await HandleFaqCallback(botClient, callbackQuery, cancellationToken);
                 break;
-            default: 
-                throw new ArgumentException("No such callback data");
+            default:
+                await HandleTeamScoreCallback(botClient, callbackQuery, cancellationToken);
+                break;
+                //throw new ArgumentException("No such callback data");
         }
+    }
+
+    private static async Task HandleTeamScoreCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
+        var data = callbackQuery.Data;
+        if (data == null) return;
+        if (data.Contains('t'))
+        { // return new inline keyboard
+            if (callbackQuery.Message == null) return;
+            var teamId = data.MySubstring(data.IndexOf('t') + 1, data.Length);
+            InlineKeyboardMarkup inlineKeyboard = new(GetTeamScoreKeyboard(teamId));
+            await botClient.SendTextMessageAsync(
+                chatId: callbackQuery.Message.Chat,
+                text: $"Очки для команды \\#*{teamId}*",
+                parseMode: ParseMode.MarkdownV2,
+                replyMarkup: inlineKeyboard,
+                cancellationToken: cancellationToken);
+        }
+        else if (data.Contains('-'))
+        {
+            if (callbackQuery.Message == null) return;
+
+            var teamId = Convert.ToInt32(data.MySubstring(data.IndexOf('#') + 1, data.IndexOf('-')));
+            var points = Convert.ToInt32(data.MySubstring(data.IndexOf('-') + 1, data.Length));
+            var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+            if (team == null) return; // GG ???
+            team.Score -= points;
+
+            var textResult = $"Вы забрали у команды \\#{teamId}\\: *{points}* очков\nТекущий результат: {team.Score}";
+            await botClient.SendTextMessageAsync(
+                chatId: callbackQuery.Message.Chat,
+                textResult,
+                parseMode: ParseMode.MarkdownV2,
+                cancellationToken: cancellationToken);
+        }
+        else if (data.Contains('+'))
+        {
+            if (callbackQuery.Message == null) return;
+
+            var teamId = Convert.ToInt32(data.MySubstring(data.IndexOf('#') + 1, data.IndexOf('+')));
+            var points = Convert.ToInt32(data.MySubstring(data.IndexOf('+') + 1, data.Length));
+            var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+            if (team == null) return; // GG ???
+            team.Score += points;
+
+            var textResult = $"Вы добавили команде \\#{teamId}\\: *{points}* очков\nТекущий результат: {team.Score}";
+            await botClient.SendTextMessageAsync(
+                chatId: callbackQuery.Message.Chat,
+                textResult,
+                parseMode: ParseMode.MarkdownV2,
+                cancellationToken: cancellationToken);
+        }
+        else if (data.Contains('m'))
+        {
+            if (callbackQuery.Message == null) return;
+
+            var teamId = Convert.ToInt32(data.MySubstring(data.IndexOf('m') + 1, data.Length));
+            var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+            
+            if (team != null)
+            {
+                var curUserNumber = 1;
+                var text = team.Members.Aggregate($"MEMBERS OF TEAM \\#{teamId}\\:\n", (current, member) => 
+                    current + $"\\#{curUserNumber++}\\. *[{member.UserInfo.Username}]* {member.UserInfo.FirstName} {member.UserInfo.LastName}\n");
+                await botClient.SendTextMessageAsync(
+                    chatId: callbackQuery.Message.Chat,
+                    text,
+                    parseMode: ParseMode.MarkdownV2,
+                    cancellationToken: cancellationToken);
+            }
+        }
+    }
+
+    private static IEnumerable<IEnumerable<InlineKeyboardButton>> GetTeamScoreKeyboard(string teamId)
+    {
+        var pointsToAdd = new List<InlineKeyboardButton>();
+        var pointsToRemove = new List<InlineKeyboardButton>();
+        for (var i = 0; i < 5; i++)
+        {
+            pointsToAdd.Add(InlineKeyboardButton.WithCallbackData(text: $"+{i + 1}", callbackData: $"#{teamId}+{i + 1}"));
+            pointsToRemove.Add(InlineKeyboardButton.WithCallbackData(text: $"-{i + 1}", callbackData: $"#{teamId}-{i + 1}"));
+        }
+
+        var infoButton = new List<InlineKeyboardButton>
+        {
+            InlineKeyboardButton.WithCallbackData(text: "Members", callbackData: $"m{teamId}")
+        };
+        return new List<List<InlineKeyboardButton>> {pointsToAdd, pointsToRemove, infoButton};
     }
 
     public static async Task HandleMapCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
@@ -84,8 +176,24 @@ public class CallbackHandler
         var user = Program.Users.FirstOrDefault(u => u.UserInfo.Id == callbackQuery.From.Id);
 
         if (user == null) return; // Throw an exception
+
+        var teamId = user.RegNumber / MEMBERS_PER_TEAM + 1;
+        user.TeamId ??= teamId;
+        var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+        // Create new team if it is not exist and add user to it
+        if (team == null)
+        {
+            Program.Teams.Add(new Team(teamId, user));
+        }
+        else
+        {
+            // Add user to team if it is exists and he is not already there
+            if (team.Members.FirstOrDefault(m => m.RegNumber == user.RegNumber) == null)
+            {
+                team.Members.Add(user);
+            }
+        }
         
-        user.TeamId ??= user.RegNumber / MEMBERS_PER_TEAM + 1;
         
         var message = await botClient.SendTextMessageAsync(
             callbackQuery.Message.Chat,

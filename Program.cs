@@ -4,8 +4,10 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramBot.Constants;
 using TelegramBot.Handlers;
-using TelegramBot.Helper;
+using TelegramBot.Helpers;
+using TelegramBot.Models;
 using AppUser = TelegramBot.Models.AppUser;
 
 namespace TelegramBot;
@@ -14,34 +16,50 @@ internal class Program
 {
     public static ITelegramBotClient Bot = new TelegramBotClient("5439105151:AAF5g0CyPannZPgwe2dtFF905wYXpAA_0QY");
     public static List<AppUser> Users { get; set; } = new();
+    public static List<Team> Teams { get; set; } = new();
+    public static List<long> ParticipantIds { get; set; } = new();
+    public static List<long> AdminIds { get; set; } = new();
+
     private static int _registrationCount = 0;
 
     public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        var validTelegramIds = TelegramIdHelper.GetIds();
-        
-        if (update.Message != null && update.Message.From != null && !validTelegramIds.Contains(update.Message.From.Id))
-        {
-            await botClient.SendTextMessageAsync(
-                update.Message.Chat,
-                "Прошу нас простить, вы не можете пользоваться системой",
-                cancellationToken: cancellationToken
-            );
-            
-            return;
-        }
-        
         Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
         var message = update.Message;
         switch (update.Type)
         {
             case UpdateType.Message:
                 if (message == null) return;
-                // Add user when he sends his first message
+
+                // Add user when he sends his first message && he is not admin
+                if (update.Message?.From == null) return;
+                var userId = update.Message.From.Id;
+
+                var isAdmin = AdminIds.Contains(userId);
+
+                if (!ParticipantIds.Contains(userId) &&
+                    !isAdmin &&
+                    !update.Message.From.IsBot)
+                {
+                    await botClient.SendTextMessageAsync(
+                        update.Message.Chat,
+                        "Прошу нас простить, вы не можете пользоваться системой",
+                        cancellationToken: cancellationToken
+                    );
+
+                    return;
+                }
+                // Если прошли дальше, значит чел в одном из списках, при этом мы сразу знаем в каком именно благодаря isAdmin
                 var userInfo = message.From;
                 if (userInfo != null && !Users.Exists(u => u.UserInfo.Id == userInfo.Id))
                     Users.Add(new AppUser(userInfo, _registrationCount++, message));
-                
+                //if (!isAdmin) TODO: Uncomment it
+                //{
+                //    var userInfo = message.From;
+                //    if (userInfo != null && !Users.Exists(u => u.UserInfo.Id == userInfo.Id))
+                //        Users.Add(new AppUser(userInfo, _registrationCount++, message));
+                //}
+
                 if (message.Text == null) return;
 
                 if (message.Text.ToLower().StartsWith('/'))
@@ -79,7 +97,9 @@ internal class Program
             .CreateLogger();
 
         Console.WriteLine("Start bot " + Bot.GetMeAsync().Result.FirstName);
-        
+        ParticipantIds = HelperExtensions.GetIds(FilePaths.ParticipantIds);
+        AdminIds = HelperExtensions.GetIds(FilePaths.AdminIds);
+
 
         var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;
