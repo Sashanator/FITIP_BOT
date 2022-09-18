@@ -22,8 +22,9 @@ internal class Program
 
         Console.WriteLine("Start bot " + Bot.GetMeAsync().Result.FirstName);
 
-        AppController.ParticipantIds = AppHelper.GetIds(FilePaths.ParticipantIds);
-        AppController.AdminIds = AppHelper.GetIds(FilePaths.AdminIds);
+        AppController.ParticipantIds = AppHelper.GetUserIds(FilePaths.ParticipantIds);
+        AppController.AdminIds = AppHelper.GetUserIds(FilePaths.AdminIds);
+        AppController.StickerIds = AppHelper.GetStickerIds(FilePaths.StickerIds);
 
         var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;

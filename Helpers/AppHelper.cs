@@ -7,11 +7,18 @@ namespace TelegramBot.Helpers;
 
 public static class AppHelper
 {
-    public static List<long> GetIds(string fileName)
+    public static List<long> GetUserIds(string fileName)
     {
         var filePath = Path.Combine(Environment.CurrentDirectory, @"Resources/", fileName);
 
-        return (from line in File.ReadLines(filePath) where !string.IsNullOrEmpty(line) select long.Parse(line)).ToList();
+        return File.ReadLines(filePath).Where(line => !string.IsNullOrEmpty(line)).Select(long.Parse).ToList();
+    }
+
+    public static List<string> GetStickerIds(string fileName)
+    {
+        var filePath = Path.Combine(Environment.CurrentDirectory, @"Resources/", fileName);
+
+        return File.ReadLines(filePath).Where(line => !string.IsNullOrEmpty(line)).ToList();
     }
 
     public static void AddNewUser(User user, Message message)

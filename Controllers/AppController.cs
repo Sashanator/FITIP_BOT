@@ -8,4 +8,5 @@ public static class AppController
     public static List<Team> Teams { get; set; } = new();
     public static List<long> ParticipantIds { get; set; } = new();
     public static List<long> AdminIds { get; set; } = new();
+    public static List<string> StickerIds { get; set; } = new();
 }

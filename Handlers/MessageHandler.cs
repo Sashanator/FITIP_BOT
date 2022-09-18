@@ -35,6 +35,13 @@ public static class MessageHandler
             replyToMessageId: message.MessageId,
             cancellationToken: cancellationToken);
 
+        var random = new Random();
+        var randomStickerId = AppController.StickerIds[random.Next(0, AppController.StickerIds.Count)];
+        await botClient.SendStickerAsync(
+            message.Chat,
+            sticker: randomStickerId,
+            cancellationToken: cancellationToken);
+
         Log.Information(FormatLogFromMessage(message));
     }
 
