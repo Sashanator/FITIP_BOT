@@ -13,4 +13,8 @@ public class Team
     public int Score { get; set; }
 
     public List<AppUser> Members { get; set; }
+
+    public List<string> History { get; set; }
+
+    //History.Add($"{user.Id}: +5")
 }

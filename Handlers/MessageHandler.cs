@@ -3,6 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Constants;
+using TelegramBot.Controllers;
 
 namespace TelegramBot.Handlers;
 
@@ -40,7 +41,7 @@ public static class MessageHandler
     private static string FormatLogFromMessage(Message message)
     {
         if (message.From == null) return string.Empty;
-        var user = Program.Users.FirstOrDefault(u => u.UserInfo.Id == message.From.Id);
-        return user == null ? string.Empty : $"#{user.RegNumber} {user.UserInfo.FirstName} {user.UserInfo.LastName} ({user.UserInfo.Username} [{user.UserInfo.Id}]): {message.Text}";
+        var user = AppController.Users.FirstOrDefault(u => u.UserInfo.Id == message.From.Id);
+        return user == null ? string.Empty : $"[{user.UserInfo.Id}] {user.UserInfo.FirstName} {user.UserInfo.LastName} ({user.UserInfo.Username}): {message.Text}";
     }
 }

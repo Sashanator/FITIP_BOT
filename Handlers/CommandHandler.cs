@@ -2,30 +2,19 @@
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.Controllers;
 
 namespace TelegramBot.Handlers;
 
 public static class CommandHandler
 {
-    private const int TEAMS_IN_ROW = 8;
     private static async Task SendMainMenu(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
         InlineKeyboardMarkup inlineKeyboard = new(new[]
         {
-            // first row
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Team", callbackData: "team"),
-            },
-            // second row
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Map", callbackData: "map"),
-            },
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "FAQ", callbackData: "faq") 
-            }
+            new [] { InlineKeyboardButton.WithCallbackData(text: "Team", callbackData: "team"), },
+            new [] { InlineKeyboardButton.WithCallbackData(text: "Map", callbackData: "map"), },
+            new [] { InlineKeyboardButton.WithCallbackData(text: "FAQ", callbackData: "faq") }
         });
         await botClient.SendTextMessageAsync(
             chatId: message.Chat,
@@ -34,56 +23,18 @@ public static class CommandHandler
             cancellationToken: cancellationToken);
     }
 
-    private static async Task SendTeamsMenu(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+    private static async Task SendAdminMenu(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
-        InlineKeyboardMarkup inlineKeyboard = new(GetInlineKeyboard(Program.Teams.Count));
+        InlineKeyboardMarkup inlineKeyboard = new(new[]
+        {
+            new [] { InlineKeyboardButton.WithCallbackData(text: "Teams", callbackData: "teams"), },
+            new [] { InlineKeyboardButton.WithCallbackData(text: "Score", callbackData: "score"), },
+            new [] { InlineKeyboardButton.WithCallbackData(text: "History", callbackData: "history") }
+        });
         await botClient.SendTextMessageAsync(
             chatId: message.Chat,
-            text: "Выберите команду",
+            text: "Админская панель",
             replyMarkup: inlineKeyboard,
-            cancellationToken: cancellationToken);
-    }
-
-    private static IEnumerable<IEnumerable<InlineKeyboardButton>> GetInlineKeyboard(int teamsCount)
-    {
-        var result = new List<List<InlineKeyboardButton>>();
-        var rowCount = (teamsCount - 1)  / TEAMS_IN_ROW + 1;
-        var curTeam = 1;
-        for (var i = 0; i < rowCount; i++)
-        {
-            var newRow = new List<InlineKeyboardButton>();
-
-            for (var j = 0; j < TEAMS_IN_ROW; j++)
-            {
-                if (curTeam > teamsCount)
-                {
-                    for (var k = j; k < TEAMS_IN_ROW; k++)
-                    {
-                        newRow.Add(InlineKeyboardButton.WithCallbackData(text: " ", callbackData: "gg"));
-                    }
-                    break;
-                }
-
-                newRow.Add(InlineKeyboardButton.WithCallbackData(text: $"#{curTeam}", callbackData: $"t{curTeam}"));
-                curTeam++;
-            }
-            
-            result.Add(newRow);
-        }
-
-        return result;
-    }
-
-    private static async Task SendScoreMessage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-    {
-        var teams = Program.Teams.OrderBy(r => r.Score).ToList();
-        var result = teams.Aggregate("", (current, team) => current + $"Team \\#{team.Id}: *{team.Score}*\n");
-        await botClient.SendTextMessageAsync(
-            message.Chat,
-            result.Length > 0 ? result : "ERROR :)",
-            parseMode: ParseMode.MarkdownV2,
-            disableNotification: false,
-            replyToMessageId: message.MessageId,
             cancellationToken: cancellationToken);
     }
 
@@ -92,24 +43,39 @@ public static class CommandHandler
         switch (message.Text?.ToLower())
         {
             case "/start":
-                await SendMainMenu(botClient, message, cancellationToken);
-                break;
-            case "/teams":
-                if (message.From?.Id == null) return;
-                if (Program.AdminIds.Contains(message.From.Id)) 
-                    await SendTeamsMenu(botClient, message, cancellationToken);
-                else
+                if (message.From == null) return;
+                if (!AppController.ParticipantIds.Contains(message.From.Id))
+                { // Check if user is admin
                     await botClient.SendTextMessageAsync(
                         message.Chat,
                         "У вас недостаточно прав!",
-                        parseMode: ParseMode.MarkdownV2,
                         disableNotification: false,
                         replyToMessageId: message.MessageId,
                         cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    await SendMainMenu(botClient, message, cancellationToken);
+                }
                 break;
-            case "/score":
-                await SendScoreMessage(botClient, message, cancellationToken);
+
+            case "/admin":
+                if (message.From == null) return;
+                if (!AppController.AdminIds.Contains(message.From.Id))
+                { // Check if user is admin
+                    await botClient.SendTextMessageAsync(
+                        message.Chat,
+                        "У вас недостаточно прав!",
+                        disableNotification: false,
+                        replyToMessageId: message.MessageId,
+                        cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    await SendAdminMenu(botClient, message, cancellationToken);
+                }
                 break;
+
             default:
                 await botClient.SendTextMessageAsync(
                     message.Chat,

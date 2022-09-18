@@ -3,16 +3,19 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Constants;
+using TelegramBot.Controllers;
 using TelegramBot.Extensions;
 using TelegramBot.Models;
 using File = System.IO.File;
 
 namespace TelegramBot.Handlers;
 
-public class CallbackHandler
+public static class CallbackHandler
 {
     private const int STAGE_COUNT = 3; // Number of floors in University
+    private const int TEAMS_IN_ROW = 8;
     private const int MEMBERS_PER_TEAM = 1;
+    private static int _regNumber;
 
     public static async Task HandleCallback(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
@@ -29,19 +32,82 @@ public class CallbackHandler
             case "faq":
                 await HandleFaqCallback(botClient, callbackQuery, cancellationToken);
                 break;
-            default:
-                await HandleTeamScoreCallback(botClient, callbackQuery, cancellationToken);
+            case "teams":
+                await SendTeamsMenu(botClient, callbackQuery, cancellationToken);
                 break;
-                //throw new ArgumentException("No such callback data");
+            case "score":
+                await SendScoreMessage(botClient, callbackQuery, cancellationToken);
+                break;
+            case "history":
+                // TODO: Make history function
+                break;
+            default:
+                await HandleTeamsCallback(botClient, callbackQuery, cancellationToken);
+                break;
         }
     }
 
-    private static async Task HandleTeamScoreCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    private static async Task SendScoreMessage(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
+        if (callbackQuery.Message == null) return;
+        var teams = AppController.Teams.OrderBy(r => r.Score).ToList();
+        var result = teams.Aggregate("", (current, team) => current + $"Team \\#{team.Id}: *{team.Score}*\n");
+        await botClient.SendTextMessageAsync(
+            callbackQuery.Message.Chat,
+            result.Length > 0 ? result : "ERROR",
+            parseMode: ParseMode.MarkdownV2,
+            disableNotification: false,
+            replyToMessageId: callbackQuery.Message.MessageId,
+            cancellationToken: cancellationToken);
+    }
+
+    private static async Task SendTeamsMenu(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
+        if (callbackQuery.Message == null) return;
+        InlineKeyboardMarkup inlineKeyboard = new(GetTeamsInlineKeyboard(AppController.Teams.Count));
+        await botClient.SendTextMessageAsync(
+            chatId: callbackQuery.Message.Chat,
+            text: "Выберите команду",
+            replyMarkup: inlineKeyboard,
+            cancellationToken: cancellationToken);
+    }
+
+    private static IEnumerable<IEnumerable<InlineKeyboardButton>> GetTeamsInlineKeyboard(int teamsCount)
+    {
+        var result = new List<List<InlineKeyboardButton>>();
+        var rowCount = (teamsCount - 1) / TEAMS_IN_ROW + 1;
+        var curTeam = 1;
+        for (var i = 0; i < rowCount; i++)
+        {
+            var newRow = new List<InlineKeyboardButton>();
+
+            for (var j = 0; j < TEAMS_IN_ROW; j++)
+            {
+                if (curTeam > teamsCount)
+                {
+                    for (var k = j; k < TEAMS_IN_ROW; k++)
+                    {
+                        newRow.Add(InlineKeyboardButton.WithCallbackData(text: " ", callbackData: "gg"));
+                    }
+                    break;
+                }
+
+                newRow.Add(InlineKeyboardButton.WithCallbackData(text: $"#{curTeam}", callbackData: $"t{curTeam}"));
+                curTeam++;
+            }
+
+            result.Add(newRow);
+        }
+
+        return result;
+    }
+
+    private static async Task HandleTeamsCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
         var data = callbackQuery.Data;
         if (data == null) return;
         if (data.Contains('t'))
-        { // return new inline keyboard
+        {
             if (callbackQuery.Message == null) return;
             var teamId = data.MySubstring(data.IndexOf('t') + 1, data.Length);
             InlineKeyboardMarkup inlineKeyboard = new(GetTeamScoreKeyboard(teamId));
@@ -58,16 +124,9 @@ public class CallbackHandler
 
             var teamId = Convert.ToInt32(data.MySubstring(data.IndexOf('#') + 1, data.IndexOf('-')));
             var points = Convert.ToInt32(data.MySubstring(data.IndexOf('-') + 1, data.Length));
-            var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+            var team = AppController.Teams.FirstOrDefault(t => t.Id == teamId);
             if (team == null) return; // GG ???
-            team.Score -= points;
-
-            var textResult = $"Вы забрали у команды \\#{teamId}\\: *{points}* очков\nТекущий результат: {team.Score}";
-            await botClient.SendTextMessageAsync(
-                chatId: callbackQuery.Message.Chat,
-                textResult,
-                parseMode: ParseMode.MarkdownV2,
-                cancellationToken: cancellationToken);
+            team.Score = team.Score - points > 0 ? team.Score - points : 0;
         }
         else if (data.Contains('+'))
         {
@@ -75,23 +134,16 @@ public class CallbackHandler
 
             var teamId = Convert.ToInt32(data.MySubstring(data.IndexOf('#') + 1, data.IndexOf('+')));
             var points = Convert.ToInt32(data.MySubstring(data.IndexOf('+') + 1, data.Length));
-            var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+            var team = AppController.Teams.FirstOrDefault(t => t.Id == teamId);
             if (team == null) return; // GG ???
             team.Score += points;
-
-            var textResult = $"Вы добавили команде \\#{teamId}\\: *{points}* очков\nТекущий результат: {team.Score}";
-            await botClient.SendTextMessageAsync(
-                chatId: callbackQuery.Message.Chat,
-                textResult,
-                parseMode: ParseMode.MarkdownV2,
-                cancellationToken: cancellationToken);
         }
         else if (data.Contains('m'))
         {
             if (callbackQuery.Message == null) return;
 
             var teamId = Convert.ToInt32(data.MySubstring(data.IndexOf('m') + 1, data.Length));
-            var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+            var team = AppController.Teams.FirstOrDefault(t => t.Id == teamId);
             
             if (team != null)
             {
@@ -104,6 +156,14 @@ public class CallbackHandler
                     parseMode: ParseMode.MarkdownV2,
                     cancellationToken: cancellationToken);
             }
+        }
+        else
+        {
+            if (callbackQuery.Message == null) return;
+            await botClient.SendTextMessageAsync(
+                chatId: callbackQuery.Message.Chat,
+                "Unknown command!",
+                cancellationToken: cancellationToken);
         }
     }
 
@@ -124,7 +184,7 @@ public class CallbackHandler
         return new List<List<InlineKeyboardButton>> {pointsToAdd, pointsToRemove, infoButton};
     }
 
-    public static async Task HandleMapCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    private static async Task HandleMapCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
         if (callbackQuery.Message == null) return;
         
@@ -146,7 +206,7 @@ public class CallbackHandler
             cancellationToken: cancellationToken);
     }
 
-    public static async Task HandleFaqCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    private static async Task HandleFaqCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
         if (callbackQuery.Message == null) return;
         ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]
@@ -169,32 +229,31 @@ public class CallbackHandler
             cancellationToken: cancellationToken);
     }
 
-    public static async Task HandleTeamCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    private static async Task HandleTeamCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
         if (callbackQuery.Message == null) return;
 
-        var user = Program.Users.FirstOrDefault(u => u.UserInfo.Id == callbackQuery.From.Id);
+        var user = AppController.Users.FirstOrDefault(u => u.UserInfo.Id == callbackQuery.From.Id);
 
         if (user == null) return; // Throw an exception
 
-        var teamId = user.RegNumber / MEMBERS_PER_TEAM + 1;
+        var teamId = _regNumber++ / MEMBERS_PER_TEAM + 1;
         user.TeamId ??= teamId;
-        var team = Program.Teams.FirstOrDefault(t => t.Id == teamId);
+        var team = AppController.Teams.FirstOrDefault(t => t.Id == teamId);
         // Create new team if it is not exist and add user to it
         if (team == null)
         {
-            Program.Teams.Add(new Team(teamId, user));
+            AppController.Teams.Add(new Team(teamId, user));
         }
         else
         {
             // Add user to team if it is exists and he is not already there
-            if (team.Members.FirstOrDefault(m => m.RegNumber == user.RegNumber) == null)
+            if (team.Members.FirstOrDefault(a => a.UserInfo.Id == user.UserInfo.Id) == null)
             {
                 team.Members.Add(user);
             }
         }
-        
-        
+
         var message = await botClient.SendTextMessageAsync(
             callbackQuery.Message.Chat,
             $"Номер твой команды: {user.TeamId}",
@@ -203,27 +262,5 @@ public class CallbackHandler
             cancellationToken: cancellationToken);
 
         await botClient.PinChatMessageAsync(callbackQuery.From.Id, message.MessageId, cancellationToken: cancellationToken);
-
-        Log(user);
-    }
-
-    private static void Log(AppUser user)
-    {
-        var dirPath = Path.Combine(Environment.CurrentDirectory, @"Logs/");
-        if (!Directory.Exists(dirPath)) Directory.CreateDirectory(dirPath);
-
-        var date = DateTime.Now.Date;
-        var time = DateTime.Now.TimeOfDay;
-        var dateTime = $"{date.Day}-{date.Month}-{date.Year}_{time.Hours}-{time.Minutes}-{time.Seconds}";
-
-        using var writer = new StreamWriter(Path.Combine(dirPath, $"log_{dateTime}.txt"));
-        writer.WriteLine($"{user.UserInfo.Id} {user.UserInfo.Username} {user.UserInfo.FirstName} {user.UserInfo.LastName} {user.RegNumber} {user.TeamId}");
-        writer.WriteLine("MESSAGES:");
-        var i = 1;
-        foreach (var message in user.Messages)
-        {
-            writer.WriteLine($"Message #{i++}: {message?.Text}");
-        }
-        writer.WriteLine();
     }
 }
