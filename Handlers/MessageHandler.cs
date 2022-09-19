@@ -13,7 +13,12 @@ public static class MessageHandler
         CancellationToken cancellationToken)
     {
         var text = message.Text;
-        if (text == null) return;
+        if (text == null)
+        {
+            Log.Error(string.Format(LogConstants.LogFormat,
+                "MessageHandler", "HandleMessages", "Message.Text"));
+            return;
+        }
 
         var answer = text switch
         {
@@ -47,7 +52,12 @@ public static class MessageHandler
 
     private static string FormatLogFromMessage(Message message)
     {
-        if (message.From == null) return string.Empty;
+        if (message.From == null)
+        {
+            Log.Error(string.Format(LogConstants.LogFormat,
+                "MessageHandler", "FormatLogFromMessage", "Message.From"));
+            return string.Empty;
+        }
         var user = AppController.Users.FirstOrDefault(u => u.UserInfo.Id == message.From.Id);
         return user == null ? string.Empty : $"[{user.UserInfo.Id}] {user.UserInfo.FirstName} {user.UserInfo.LastName} ({user.UserInfo.Username}): {message.Text}";
     }

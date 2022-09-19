@@ -1,7 +1,9 @@
-﻿using Telegram.Bot;
+﻿using Serilog;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.Constants;
 using TelegramBot.Controllers;
 
 namespace TelegramBot.Handlers;
@@ -40,10 +42,15 @@ public static class CommandHandler
 
     public static async Task HandleCommands(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
+        if (message.From == null)
+        {
+            Log.Error(string.Format(LogConstants.LogFormat,
+                "CommandHandler", "HandleCommands", "Message.From"));
+            return;
+        }
         switch (message.Text?.ToLower())
         {
             case "/start":
-                if (message.From == null) return;
                 if (!AppController.ParticipantIds.Contains(message.From.Id))
                 { // Check if user is admin
                     await botClient.SendTextMessageAsync(
@@ -60,7 +67,6 @@ public static class CommandHandler
                 break;
 
             case "/admin":
-                if (message.From == null) return;
                 if (!AppController.AdminIds.Contains(message.From.Id))
                 { // Check if user is admin
                     await botClient.SendTextMessageAsync(
