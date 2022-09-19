@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using Serilog;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 
 namespace TelegramBot.Handlers;
@@ -13,6 +14,8 @@ public static class ErrorHandler
                 => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
             _ => exception.ToString()
         };
+
+        Log.Error(errorMessage);
 
         Console.WriteLine(errorMessage);
         return Task.CompletedTask;

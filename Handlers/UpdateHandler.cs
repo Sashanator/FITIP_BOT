@@ -1,6 +1,8 @@
-﻿using Telegram.Bot;
+﻿using Serilog;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramBot.Constants;
 using TelegramBot.Controllers;
 using TelegramBot.Helpers;
 
@@ -14,7 +16,12 @@ public static class UpdateHandler
         switch (update.Type)
         {
             case UpdateType.Message:
-                if (update.Message == null) return;
+                if (update.Message == null)
+                {
+                    Log.Error(string.Format(LogConstants.LogFormat, 
+                        "UpdateHandler", "HandleUpdateAsync", "Update.Message"));
+                    return;
+                }
                 await HandleUpdateTypeMessage(botClient, update.Message, cancellationToken);
                 break;
             case UpdateType.CallbackQuery:
@@ -53,7 +60,19 @@ public static class UpdateHandler
 
     private static async Task HandleUpdateTypeMessage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
-        if (message.From == null || message.Text == null) return;
+        if (message.From == null)
+        {
+            Log.Error(string.Format(LogConstants.LogFormat,
+                "UpdateHandler", "HandleUpdateTypeMessage", "Message.From"));
+            return;
+        }
+
+        if (message.Text == null)
+        {
+            Log.Error(string.Format(LogConstants.LogFormat,
+                "UpdateHandler", "HandleUpdateTypeMessage", "Message.Text", "MESSAGE FROM BOT"));
+            return;
+        }
         
         var userId = message.From.Id;
 
