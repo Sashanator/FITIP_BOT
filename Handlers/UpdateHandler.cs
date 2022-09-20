@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Newtonsoft.Json;
+using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -12,7 +13,7 @@ public static class UpdateHandler
 {
     public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
+        Console.WriteLine(JsonConvert.SerializeObject(update));
         try
         {
             switch (update.Type)
@@ -28,7 +29,7 @@ public static class UpdateHandler
                     await HandleUpdateTypeMessage(botClient, update.Message, cancellationToken);
                     break;
                 case UpdateType.CallbackQuery:
-                    AppHelper.AddNewUser(update.CallbackQuery!.From, update.CallbackQuery.Message);
+                    AppHelper.AddNewUser(update.CallbackQuery!.From);
                     await CallbackHandler.HandleCallback(botClient, update, cancellationToken);
                     break;
                 case UpdateType.Unknown:
@@ -98,7 +99,7 @@ public static class UpdateHandler
             return;
         }
         
-        AppHelper.AddNewUser(message.From, message);
+        AppHelper.AddNewUser(message.From);
 
         if (message.Text.ToLower().StartsWith('/'))
             await CommandHandler.HandleCommands(botClient, message, cancellationToken);

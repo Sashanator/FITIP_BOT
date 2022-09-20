@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Newtonsoft.Json;
+using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,7 +17,7 @@ public static class CallbackHandler
     private const int STAGE_COUNT = 3; // Number of floors in University
     private const int TEAMS_IN_ROW = 8;
     //private const int TEAMS_COUNT = 5; // Number of teams
-    private static int _regNumber;
+    //private static int _regNumber;
 
     public static async Task HandleCallback(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
@@ -54,6 +55,7 @@ public static class CallbackHandler
 
     private static async Task SendScoreMessage(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
+        BackupController.CreateBackup(); // TODO: Remove it!!!
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
@@ -284,7 +286,8 @@ public static class CallbackHandler
         if (user.TeamId == null)
         {
             //var teamId = _regNumber++ / MEMBERS_PER_TEAM + 1;
-            var teamId = _regNumber++ % AppController.TeamsCount + 1; // offset +1 to make impossible team_id == 0
+
+            var teamId = AppController.RegNumber++ % AppController.TeamsCount + 1; // offset +1 to make impossible team_id == 0
             user.TeamId = teamId;
             var team = AppController.Teams.FirstOrDefault(t => t.Id == teamId);
             // Create new team if it is not exist and add user to it

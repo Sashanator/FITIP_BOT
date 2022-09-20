@@ -30,6 +30,15 @@ internal class Program
             Console.WriteLine(e.Message);
             return;
         }
+
+        // Check if backup file exists
+        // if exists then invoke Restore function
+        if (File.Exists(BackupController.BACKUP_FILE_PATH))
+        {
+            Console.WriteLine("Start restoring the system...");
+            BackupController.Restore();
+            Console.WriteLine("System restoring is finished");
+        }
         
 
         Log.Logger = new LoggerConfiguration()
