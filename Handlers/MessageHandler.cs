@@ -16,7 +16,7 @@ public static class MessageHandler
         if (text == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "MessageHandler", "HandleMessages", "Message.Text"));
+                "MessageHandler", "HandleMessages", "Message.Text", ""));
             return;
         }
 
@@ -55,7 +55,7 @@ public static class MessageHandler
         if (message.From == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "MessageHandler", "FormatLogFromMessage", "Message.From"));
+                "MessageHandler", "FormatLogFromMessage", "Message.From", ""));
             return string.Empty;
         }
         var user = AppController.Users.FirstOrDefault(u => u.UserInfo.Id == message.From.Id);

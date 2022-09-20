@@ -21,7 +21,7 @@ public static class AppHelper
         return File.ReadLines(filePath).Where(line => !string.IsNullOrEmpty(line)).ToList();
     }
 
-    public static void AddNewUser(User user, Message message)
+    public static void AddNewUser(User user, Message? message)
     {
         if (!AppController.Users.Exists(u => u.UserInfo.Id == user.Id))
             AppController.Users.Add(new AppUser(user, message));

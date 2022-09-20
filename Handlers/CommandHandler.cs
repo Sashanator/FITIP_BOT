@@ -31,7 +31,6 @@ public static class CommandHandler
         {
             new [] { InlineKeyboardButton.WithCallbackData(text: "Teams", callbackData: "teams"), },
             new [] { InlineKeyboardButton.WithCallbackData(text: "Score", callbackData: "score"), },
-            new [] { InlineKeyboardButton.WithCallbackData(text: "History", callbackData: "history") }
         });
         await botClient.SendTextMessageAsync(
             chatId: message.Chat,
@@ -45,7 +44,7 @@ public static class CommandHandler
         if (message.From == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CommandHandler", "HandleCommands", "Message.From"));
+                "CommandHandler", "HandleCommands", "Message.From", ""));
             return;
         }
         switch (message.Text?.ToLower())

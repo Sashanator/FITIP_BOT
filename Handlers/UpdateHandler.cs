@@ -13,48 +13,57 @@ public static class UpdateHandler
     public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
-        switch (update.Type)
+        try
         {
-            case UpdateType.Message:
-                if (update.Message == null)
-                {
-                    Log.Error(string.Format(LogConstants.LogFormat, 
-                        "UpdateHandler", "HandleUpdateAsync", "Update.Message"));
-                    return;
-                }
-                await HandleUpdateTypeMessage(botClient, update.Message, cancellationToken);
-                break;
-            case UpdateType.CallbackQuery:
-                await CallbackHandler.HandleCallback(botClient, update, cancellationToken);
-                break;
-            case UpdateType.Unknown:
-                break;
-            case UpdateType.InlineQuery:
-                break;
-            case UpdateType.ChosenInlineResult:
-                break;
-            case UpdateType.EditedMessage:
-                break;
-            case UpdateType.ChannelPost:
-                break;
-            case UpdateType.EditedChannelPost:
-                break;
-            case UpdateType.ShippingQuery:
-                break;
-            case UpdateType.PreCheckoutQuery:
-                break;
-            case UpdateType.Poll:
-                break;
-            case UpdateType.PollAnswer:
-                break;
-            case UpdateType.MyChatMember:
-                break;
-            case UpdateType.ChatMember:
-                break;
-            case UpdateType.ChatJoinRequest:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
+            switch (update.Type)
+            {
+                case UpdateType.Message:
+                    if (update.Message == null)
+                    {
+                        Log.Error(string.Format(LogConstants.LogFormat,
+                            "UpdateHandler", "HandleUpdateAsync", "Update.Message", ""));
+                        return;
+                    }
+
+                    await HandleUpdateTypeMessage(botClient, update.Message, cancellationToken);
+                    break;
+                case UpdateType.CallbackQuery:
+                    AppHelper.AddNewUser(update.CallbackQuery!.From, update.CallbackQuery.Message);
+                    await CallbackHandler.HandleCallback(botClient, update, cancellationToken);
+                    break;
+                case UpdateType.Unknown:
+                    break;
+                case UpdateType.InlineQuery:
+                    break;
+                case UpdateType.ChosenInlineResult:
+                    break;
+                case UpdateType.EditedMessage:
+                    break;
+                case UpdateType.ChannelPost:
+                    break;
+                case UpdateType.EditedChannelPost:
+                    break;
+                case UpdateType.ShippingQuery:
+                    break;
+                case UpdateType.PreCheckoutQuery:
+                    break;
+                case UpdateType.Poll:
+                    break;
+                case UpdateType.PollAnswer:
+                    break;
+                case UpdateType.MyChatMember:
+                    break;
+                case UpdateType.ChatMember:
+                    break;
+                case UpdateType.ChatJoinRequest:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e.Message);
         }
     }
 
@@ -63,7 +72,7 @@ public static class UpdateHandler
         if (message.From == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "UpdateHandler", "HandleUpdateTypeMessage", "Message.From"));
+                "UpdateHandler", "HandleUpdateTypeMessage", "Message.From", ""));
             return;
         }
 
@@ -89,7 +98,7 @@ public static class UpdateHandler
             return;
         }
         
-        AppHelper.AddNewUser(message.From, message) ;
+        AppHelper.AddNewUser(message.From, message);
 
         if (message.Text.ToLower().StartsWith('/'))
             await CommandHandler.HandleCommands(botClient, message, cancellationToken);

@@ -15,7 +15,7 @@ public static class CallbackHandler
 {
     private const int STAGE_COUNT = 3; // Number of floors in University
     private const int TEAMS_IN_ROW = 8;
-    private const int MEMBERS_PER_TEAM = 1;
+    //private const int TEAMS_COUNT = 5; // Number of teams
     private static int _regNumber;
 
     public static async Task HandleCallback(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -24,7 +24,7 @@ public static class CallbackHandler
         if (callbackQuery == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleCallback", "Update.CallbackQuery"));
+                "CallbackHandler", "HandleCallback", "Update.CallbackQuery", ""));
             return;
         }
         switch (callbackQuery.Data)
@@ -44,9 +44,6 @@ public static class CallbackHandler
             case "score":
                 await SendScoreMessage(botClient, callbackQuery, cancellationToken);
                 break;
-            case "history":
-                // TODO: Make history function
-                break;
             case "gg":
                 break;
             default:
@@ -60,7 +57,7 @@ public static class CallbackHandler
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "SendScoreMessage", "CallbackQuery.Message"));
+                "CallbackHandler", "SendScoreMessage", "CallbackQuery.Message", ""));
             return;
         }
         var teams = AppController.Teams.OrderBy(r => r.Score).ToList();
@@ -79,7 +76,7 @@ public static class CallbackHandler
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "SendTeamsMenu", "CallbackQuery.Message"));
+                "CallbackHandler", "SendTeamsMenu", "CallbackQuery.Message", ""));
             return;
         }
         InlineKeyboardMarkup inlineKeyboard = new(GetTeamsInlineKeyboard(AppController.Teams.Count));
@@ -127,7 +124,7 @@ public static class CallbackHandler
         if (data == null || message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleTeamsCallback", "CallbackQuery.Data || CallbackQuery.Message"));
+                "CallbackHandler", "HandleTeamsCallback", "CallbackQuery.Data || CallbackQuery.Message", ""));
             return;
         }
         if (data.Contains('t'))
@@ -149,7 +146,7 @@ public static class CallbackHandler
             if (team == null)
             {
                 Log.Error(string.Format(LogConstants.LogFormat,
-                    "CallbackHandler", "HandleTeamsCallback", "Team"));
+                    "CallbackHandler", "HandleTeamsCallback", "Team", ""));
                 return;
             } // GG ???
             team.Score = team.Score - points > 0 ? team.Score - points : 0;
@@ -162,7 +159,7 @@ public static class CallbackHandler
             if (team == null)
             {
                 Log.Error(string.Format(LogConstants.LogFormat,
-                    "CallbackHandler", "HandleTeamsCallback", "Team"));
+                    "CallbackHandler", "HandleTeamsCallback", "Team", ""));
                 return;
             } // GG ???
             team.Score += points;
@@ -176,7 +173,7 @@ public static class CallbackHandler
             {
                 var curUserNumber = 1;
                 var text = team.Members.Aggregate($"MEMBERS OF TEAM \\#{teamId}\\:\n", (current, member) => 
-                    current + $"\\#{curUserNumber++}\\. *[{member.UserInfo.Username}]* {member.UserInfo.FirstName} {member.UserInfo.LastName}\n");
+                    current + $"\\#{curUserNumber++}\\. *\\[{member.UserInfo.Username}\\]* {member.UserInfo.FirstName} {member.UserInfo.LastName}\n");
                 await botClient.SendTextMessageAsync(
                     chatId: message.Chat,
                     text,
@@ -215,7 +212,7 @@ public static class CallbackHandler
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleMapCallback", "CallbackQuery.Message"));
+                "CallbackHandler", "HandleMapCallback", "CallbackQuery.Message", ""));
             return;
         }
         
@@ -242,7 +239,7 @@ public static class CallbackHandler
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleFaqCallback", "CallbackQuery.Message"));
+                "CallbackHandler", "HandleFaqCallback", "CallbackQuery.Message", ""));
             return;
         }
         ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]
@@ -270,22 +267,24 @@ public static class CallbackHandler
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleTeamCallback", "CallbackQuery.Message"));
+                "CallbackHandler", "HandleTeamCallback", "CallbackQuery.Message", ""));
             return;
         }
 
         var user = AppController.Users.FirstOrDefault(u => u.UserInfo.Id == callbackQuery.From.Id);
 
-        if (user == null)
+        if (user == null) 
         {
             Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleTeamCallback", "User"));
-            return; // Throw an exception
+                "CallbackHandler", "HandleTeamCallback", "User", ""));
+            throw new ArgumentException("GG WP");
+            //return; // Throw an exception
         } 
 
         if (user.TeamId == null)
         {
-            var teamId = _regNumber++ / MEMBERS_PER_TEAM + 1;
+            //var teamId = _regNumber++ / MEMBERS_PER_TEAM + 1;
+            var teamId = _regNumber++ % AppController.TeamsCount + 1; // offset +1 to make impossible team_id == 0
             user.TeamId = teamId;
             var team = AppController.Teams.FirstOrDefault(t => t.Id == teamId);
             // Create new team if it is not exist and add user to it
