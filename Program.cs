@@ -46,6 +46,9 @@ internal class Program
             receiverOptions,
             cancellationToken
         );
-        Console.ReadLine();
+        while (true)
+        {
+            Thread.Sleep(1000);
+        }
     }
 }
