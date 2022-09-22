@@ -55,7 +55,6 @@ public static class CallbackHandler
 
     private static async Task SendScoreMessage(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
-        BackupController.CreateBackup(); // TODO: Remove it!!!
         if (callbackQuery.Message == null)
         {
             Log.Error(string.Format(LogConstants.LogFormat,

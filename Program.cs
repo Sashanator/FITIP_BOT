@@ -13,7 +13,7 @@ internal class Program
 {
     public static ITelegramBotClient Bot = new TelegramBotClient("5508993832:AAGe23sZBG8hR2N0oHbkTsBOQPcy0QrJvGs");
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         try
         { // Check how to break it ?
@@ -31,6 +31,8 @@ internal class Program
             return;
         }
 
+        await BackupController.ScheduleBackupJob();
+
         // Check if backup file exists
         // if exists then invoke Restore function
         if (File.Exists(BackupController.BACKUP_FILE_PATH))
@@ -47,6 +49,7 @@ internal class Program
             .WriteTo.Logger(l => l.Filter.ByIncludingOnly(e => e.Level == LogEventLevel.Information).WriteTo.File($@"Logs/Information_{DateTime.Now:dd/MM/yyyy}.log"))
             .WriteTo.Logger(l => l.Filter.ByIncludingOnly(e => e.Level == LogEventLevel.Error).WriteTo.File($@"Logs/Errors_{DateTime.Now:dd/MM/yyyy}.log"))
             .WriteTo.Logger(l => l.Filter.ByIncludingOnly(e => e.Level == LogEventLevel.Warning).WriteTo.File($@"Logs/Warnings_{DateTime.Now:dd/MM/yyyy}.log"))
+            .WriteTo.Logger(l => l.Filter.ByIncludingOnly(e => e.Level == LogEventLevel.Debug).WriteTo.File($@"Logs/Debug_{DateTime.Now:dd/MM/yyyy}.log"))
             .CreateLogger();
 
         Console.WriteLine("Start bot " + Bot.GetMeAsync().Result.FirstName);
