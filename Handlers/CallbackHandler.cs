@@ -61,7 +61,7 @@ public static class CallbackHandler
                 "CallbackHandler", "SendScoreMessage", "CallbackQuery.Message", "CallbackQuery Message was null"));
             return;
         }
-        var teams = AppController.Teams.OrderByDescending(r => r.Score).ToList();
+        var teams = AppController.Teams.OrderBy(r => r.Score).ToList();
         var result = teams.Aggregate("", (current, team) => current + $"Team \\#{team.Id}: *{team.Score}*\n");
         await botClient.SendTextMessageAsync(
             callbackQuery.Message.Chat,
