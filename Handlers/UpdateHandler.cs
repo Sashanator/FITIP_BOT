@@ -13,7 +13,7 @@ public static class UpdateHandler
 {
     public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        Console.WriteLine(JsonConvert.SerializeObject(update));
+        //Console.WriteLine(JsonConvert.SerializeObject(update));
         try
         {
             switch (update.Type)
@@ -21,11 +21,10 @@ public static class UpdateHandler
                 case UpdateType.Message:
                     if (update.Message == null)
                     {
-                        Log.Error(string.Format(LogConstants.LogFormat,
+                        Log.Warning(string.Format(LogConstants.LogFormat,
                             "UpdateHandler", "HandleUpdateAsync", "Update.Message", ""));
                         return;
                     }
-
                     await HandleUpdateTypeMessage(botClient, update.Message, cancellationToken);
                     break;
                 case UpdateType.CallbackQuery:
@@ -72,14 +71,14 @@ public static class UpdateHandler
     {
         if (message.From == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
+            Log.Warning(string.Format(LogConstants.LogFormat,
                 "UpdateHandler", "HandleUpdateTypeMessage", "Message.From", ""));
             return;
         }
 
         if (message.Text == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
+            Log.Warning(string.Format(LogConstants.LogFormat,
                 "UpdateHandler", "HandleUpdateTypeMessage", "Message.Text", "MESSAGE FROM BOT"));
             return;
         }

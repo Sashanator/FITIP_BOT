@@ -15,7 +15,7 @@ public static class MessageHandler
         var text = message.Text;
         if (text == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
+            Log.Warning(string.Format(LogConstants.LogFormat,
                 "MessageHandler", "HandleMessages", "Message.Text", ""));
             return;
         }
@@ -54,7 +54,7 @@ public static class MessageHandler
     {
         if (message.From == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
+            Log.Warning(string.Format(LogConstants.LogFormat,
                 "MessageHandler", "FormatLogFromMessage", "Message.From", ""));
             return string.Empty;
         }

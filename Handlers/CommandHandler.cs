@@ -43,7 +43,7 @@ public static class CommandHandler
     {
         if (message.From == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
+            Log.Warning(string.Format(LogConstants.LogFormat,
                 "CommandHandler", "HandleCommands", "Message.From", ""));
             return;
         }

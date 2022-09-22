@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Quartz;
 using Quartz.Impl;
+using Serilog;
 using TelegramBot.Jobs;
 using TelegramBot.Models;
 
@@ -13,9 +14,16 @@ public static class BackupController
     public static void Restore()
     {
         // TODO: Check if dir does not exist
+        if (!Directory.Exists("Backup"))
+        {
+            Log.Error("Backup Directory does not exist");
+            Console.WriteLine("Restoring system failed!");
+            return;
+        }
+
         var jsonString = File.ReadAllText(BACKUP_FILE_PATH);
         var backup = JsonConvert.DeserializeObject<Backup>(jsonString);
-        if (backup == null) throw new Exception("Backup was null");
+        if (backup == null) throw new Exception("Backup file was empty");
 
         AppController.RegNumber = backup.RegNumber;
         AppController.Teams = backup.Teams;
@@ -33,15 +41,15 @@ public static class BackupController
 
         // define the job and tie it to our HelloJob class
         var job = JobBuilder.Create<BackupJob>()
-            .WithIdentity("myJob", "group1")
+            .WithIdentity("Backup Job", "Backup")
             .Build();
 
         // Trigger the job to run now, and then every 40 seconds
         var trigger = TriggerBuilder.Create()
-            .WithIdentity("myTrigger", "group1")
+            .WithIdentity("Backup Job", "Backup")
             .StartNow()
             .WithSimpleSchedule(x => x
-                .WithIntervalInSeconds(10)
+                .WithIntervalInSeconds(60)
                 .RepeatForever())
             .Build();
 

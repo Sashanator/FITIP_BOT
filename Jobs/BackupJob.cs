@@ -9,11 +9,9 @@ public class BackupJob : IJob
 {
     public async Task Execute(IJobExecutionContext context)
     {
-        //Log.Debug("JOB STARTED");
         var backup = new Backup(AppController.RegNumber, AppController.Teams, AppController.Users);
         var jsonString = JsonConvert.SerializeObject(backup);
-        // TODO: Create dir if it's not exist
-        await File.WriteAllTextAsync(@"Backup/backup.json", jsonString);
-        //Log.Debug("JOB FINISHED");
+
+        await File.WriteAllTextAsync(BackupController.BACKUP_FILE_PATH, jsonString);
     }
 }

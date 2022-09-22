@@ -24,8 +24,8 @@ public static class CallbackHandler
         var callbackQuery = update.CallbackQuery;
         if (callbackQuery == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleCallback", "Update.CallbackQuery", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleCallback", "Update.CallbackQuery", "CallbackQuery was null"));
             return;
         }
         switch (callbackQuery.Data)
@@ -57,15 +57,15 @@ public static class CallbackHandler
     {
         if (callbackQuery.Message == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "SendScoreMessage", "CallbackQuery.Message", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "SendScoreMessage", "CallbackQuery.Message", "CallbackQuery Message was null"));
             return;
         }
         var teams = AppController.Teams.OrderBy(r => r.Score).ToList();
         var result = teams.Aggregate("", (current, team) => current + $"Team \\#{team.Id}: *{team.Score}*\n");
         await botClient.SendTextMessageAsync(
             callbackQuery.Message.Chat,
-            result.Length > 0 ? result : "Zero Teams",
+            result.Length > 0 ? result : "В системе нет ни одной команды",
             parseMode: ParseMode.MarkdownV2,
             disableNotification: false,
             replyToMessageId: callbackQuery.Message.MessageId,
@@ -76,8 +76,8 @@ public static class CallbackHandler
     {
         if (callbackQuery.Message == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "SendTeamsMenu", "CallbackQuery.Message", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "SendTeamsMenu", "CallbackQuery.Message", "CallbackQuery Message was null"));
             return;
         }
         InlineKeyboardMarkup inlineKeyboard = new(GetTeamsInlineKeyboard(AppController.Teams.Count));
@@ -122,12 +122,21 @@ public static class CallbackHandler
     {
         var data = callbackQuery.Data;
         var message = callbackQuery.Message;
-        if (data == null || message == null)
+        if (data == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleTeamsCallback", "CallbackQuery.Data || CallbackQuery.Message", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleTeamsCallback", "CallbackQuery.Data", "CallbackQuery Data was null!"));
             return;
         }
+
+        if (message == null)
+        {
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleTeamsCallback", "CallbackQuery.Message", "CallbackQuery Message was null!"));
+            return;
+        }
+
+
         if (data.Contains('t'))
         {
             var teamId = data.MySubstring(data.IndexOf('t') + 1, data.Length);
@@ -147,7 +156,7 @@ public static class CallbackHandler
             if (team == null)
             {
                 Log.Error(string.Format(LogConstants.LogFormat,
-                    "CallbackHandler", "HandleTeamsCallback", "Team", ""));
+                    "CallbackHandler", "HandleTeamsCallback", "Team", "Team was not found while trying to add points"));
                 return;
             } // GG ???
             team.Score = team.Score - points > 0 ? team.Score - points : 0;
@@ -160,7 +169,7 @@ public static class CallbackHandler
             if (team == null)
             {
                 Log.Error(string.Format(LogConstants.LogFormat,
-                    "CallbackHandler", "HandleTeamsCallback", "Team", ""));
+                    "CallbackHandler", "HandleTeamsCallback", "Team", "Team was not found while trying to add points"));
                 return;
             } // GG ???
             team.Score += points;
@@ -212,8 +221,8 @@ public static class CallbackHandler
     {
         if (callbackQuery.Message == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleMapCallback", "CallbackQuery.Message", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleMapCallback", "CallbackQuery.Message", "CallbackQuery.Message was null"));
             return;
         }
         
@@ -239,8 +248,8 @@ public static class CallbackHandler
     {
         if (callbackQuery.Message == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleFaqCallback", "CallbackQuery.Message", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleFaqCallback", "CallbackQuery.Message", "CallbackQuery Message was null"));
             return;
         }
         ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]
@@ -267,8 +276,8 @@ public static class CallbackHandler
     {
         if (callbackQuery.Message == null)
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleTeamCallback", "CallbackQuery.Message", ""));
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleTeamCallback", "CallbackQuery.Message", "CallbackQuery Message was null"));
             return;
         }
 
@@ -276,10 +285,14 @@ public static class CallbackHandler
 
         if (user == null) 
         {
-            Log.Error(string.Format(LogConstants.LogFormat,
-                "CallbackHandler", "HandleTeamCallback", "User", ""));
-            throw new ArgumentException("GG WP");
-            //return; // Throw an exception
+            Log.Warning(string.Format(LogConstants.LogFormat,
+                "CallbackHandler", "HandleTeamCallback", "User", "User is not registered in system"));
+            await botClient.SendTextMessageAsync(
+                callbackQuery.Message.Chat,
+                "Вы не зарегистрированы в системе! Пожалуйста, напишите команду '/start' в чат (без кавычек). Если проблема не уйдёт, обратитесь к организаторам мероприятия, пожалуйста",
+                disableNotification: false,
+                cancellationToken: cancellationToken);
+            return; // Throw an exception
         } 
 
         if (user.TeamId == null)
