@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Serilog;
+﻿using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,8 +15,7 @@ public static class CallbackHandler
 {
     private const int STAGE_COUNT = 3; // Number of floors in University
     private const int TEAMS_IN_ROW = 8;
-    //private const int TEAMS_COUNT = 5; // Number of teams
-    //private static int _regNumber;
+    private const int POINTS = 3;
 
     public static async Task HandleCallback(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
@@ -204,7 +202,7 @@ public static class CallbackHandler
     {
         var pointsToAdd = new List<InlineKeyboardButton>();
         var pointsToRemove = new List<InlineKeyboardButton>();
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < POINTS; i++)
         {
             pointsToAdd.Add(InlineKeyboardButton.WithCallbackData(text: $"+{i + 1}", callbackData: $"#{teamId}+{i + 1}"));
             pointsToRemove.Add(InlineKeyboardButton.WithCallbackData(text: $"-{i + 1}", callbackData: $"#{teamId}-{i + 1}"));
@@ -229,7 +227,7 @@ public static class CallbackHandler
         var mapPictures = new List<InputMediaPhoto>();
         for (var i = 0; i < STAGE_COUNT; i++)
         {
-            var fileName = $"stage_{i}.jpg";
+            var fileName = $"stage_{i}.png";
             var filePath = Path.Combine(Environment.CurrentDirectory, @"Resources/", fileName);
             var fileStream = File.OpenRead(filePath);
             mapPictures.Add(new InputMediaPhoto(new InputMedia(fileStream, $"Stage #{i + 1}")));
@@ -261,6 +259,24 @@ public static class CallbackHandler
                                 new KeyboardButton[] { Questions.Question_5 },
                                 new KeyboardButton[] { Questions.Question_6 },
                                 new KeyboardButton[] { Questions.Question_7 },
+                                new KeyboardButton[] { Questions.Question_8 },
+                                new KeyboardButton[] { Questions.Question_9 },
+                                new KeyboardButton[] { Questions.Question_10 },
+                                new KeyboardButton[] { Questions.Question_11 },
+                                new KeyboardButton[] { Questions.Question_12 },
+                                new KeyboardButton[] { Questions.Question_13 },
+                                new KeyboardButton[] { Questions.Question_14 },
+                                new KeyboardButton[] { Questions.Question_15 },
+                                new KeyboardButton[] { Questions.Question_16 },
+                                new KeyboardButton[] { Questions.Question_17 },
+                                new KeyboardButton[] { Questions.Question_18 },
+                                new KeyboardButton[] { Questions.Question_19 },
+                                new KeyboardButton[] { Questions.Question_20 },
+                                new KeyboardButton[] { Questions.Question_21 },
+                                new KeyboardButton[] { Questions.Question_22 },
+                                new KeyboardButton[] { Questions.Question_23 },
+                                new KeyboardButton[] { Questions.Question_24 },
+
                             })
         {
             ResizeKeyboard = true

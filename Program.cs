@@ -32,7 +32,7 @@ internal class Program
 
         await BackupController.ScheduleBackupJob();
 
-        Console.WriteLine("Start bot " + Bot.GetMeAsync().Result.FirstName);
+        Console.WriteLine("Start bot " + (await Bot.GetMeAsync()).FirstName);
 
         var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;
@@ -46,6 +46,7 @@ internal class Program
             receiverOptions,
             cancellationToken
         );
-        Console.ReadLine();
+
+        Console.ReadKey();
     }
 }
