@@ -8,7 +8,7 @@ namespace TelegramBot;
 
 internal class Program
 {
-    public static ITelegramBotClient Bot = new TelegramBotClient("5439105151:AAF5g0CyPannZPgwe2dtFF905wYXpAA_0QY");
+    public static ITelegramBotClient Bot = new TelegramBotClient("");
 
     public static async Task Main(string[] args)
     {
